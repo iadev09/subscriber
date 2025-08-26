@@ -1,5 +1,5 @@
 use once_cell::sync::Lazy;
-pub static STATS: Lazy<Stats> = Lazy::new(|| Stats::new());
+pub static STATS: Lazy<Stats> = Lazy::new(Stats::new);
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 

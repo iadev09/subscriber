@@ -167,7 +167,7 @@ pub async fn run(state: SharedState) -> crate::Result {
 
     tokio::time::sleep(Duration::from_millis(1)).await; // Wait for canceled job results. because we work in instantaneous, we must wait cancellation task result.
 
-    log::info!("📊 Final stats: {}", STATS.to_string());
+    log::info!("📊 Final stats: {}", *STATS);
 
     let loss_count = STATS.unknown_count();
     if loss_count > 0 {

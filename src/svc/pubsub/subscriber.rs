@@ -31,7 +31,7 @@ pub async fn run(state: SharedState) -> crate::Result {
                 break;
             }
             Err(e) => match &e {
-                Error::RedisDisconnected => {
+                Error::Disconnected => {
                     log::error!("Redis disconnected: {}", e);
                     let count = RETRY_COUNTER.fetch_add(1, Ordering::SeqCst);
                     let delay = if count < SHORT_RETRY_COUNT {
@@ -42,7 +42,7 @@ pub async fn run(state: SharedState) -> crate::Result {
                     log::warn!("Restarting subscriber in {} seconds...,", delay);
                     tokio::time::sleep(Duration::from_secs(delay)).await;
                 }
-                Error::RedisConnectionError(conn_err) => {
+                Error::Connection(conn_err) => {
                     log::error!("Redis connection failed: {}", conn_err);
                     let count = RETRY_COUNTER.fetch_add(1, Ordering::SeqCst);
                     let delay = if count < SHORT_RETRY_COUNT {
@@ -53,7 +53,7 @@ pub async fn run(state: SharedState) -> crate::Result {
                     log::warn!("Restarting subscriber in {} seconds...,", delay);
                     tokio::time::sleep(Duration::from_secs(delay)).await;
                 }
-                Error::UnhandledRedisError(redis_err) => {
+                Error::Unhandled(redis_err) => {
                     log::error!("Unhandled Redis error: {} closing subscriber", redis_err);
                     log::debug!("Full redis error trace: {:?}", e);
                     return Err(e.into());
@@ -112,7 +112,7 @@ async fn subscribe_channel(state: SharedState) -> Result<(), Error> {
                             }
                         }
                         None => {
-                            return Err(Error::RedisDisconnected);
+                            return Err(Error::Disconnected);
                         }
                     }
                 }
@@ -130,7 +130,7 @@ async fn subscribe_channel(state: SharedState) -> Result<(), Error> {
             log::info!("📴 Unsubscribed from channel '{}'", &options.channel);
             Ok(())
         }
-        Err(e @ Error::RedisConnectionError(_) | e @ Error::RedisDisconnected) => Err(e),
+        Err(e @ Error::Connection(_) | e @ Error::Disconnected) => Err(e),
         Err(e) => {
             if let Err(e) = subscriber.unsubscribe(&options.channel).await {
                 log::warn!("Unsubscribe failed during graceful shutdown: {}", e);

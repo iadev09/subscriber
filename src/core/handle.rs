@@ -29,14 +29,11 @@ pub enum Error {
     ShuttingDown // GracefulShutdown(Duration),
 }
 
-#[allow(unused)]
 impl Handle {
     /// Create a new handle.
     pub fn new(max_count: Option<usize>) -> Self {
         if let Some(max_count) = max_count {
-            let mut inner = Inner::default();
-            inner.max_count = Some(max_count);
-
+            let inner = Inner { max_count: Some(max_count), ..Default::default() };
             Handle { inner: Arc::new(inner) }
         } else {
             Handle::default()
@@ -94,10 +91,10 @@ impl Handle {
 
             let count = self.inner.count.load(Ordering::SeqCst);
 
-            if let Some(max_count) = self.inner.max_count {
-                if count < max_count {
-                    return Ok(self.watcher());
-                }
+            if let Some(max_count) = self.inner.max_count
+                && count < max_count
+            {
+                return Ok(self.watcher());
             }
 
             // Wait until a connection is freed
@@ -158,11 +155,11 @@ impl Drop for Watcher {
         }
 
         // watcher not dropped yet.
-        if let Some(max_count) = self.handle.inner.max_count {
-            if count < max_count {
-                // Notify waiters that a slot is available
-                self.handle.inner.released.notify_waiters();
-            }
+        if let Some(max_count) = self.handle.inner.max_count
+            && count < max_count
+        {
+            // Notify waiters that a slot is available
+            self.handle.inner.released.notify_waiters();
         }
     }
 }
