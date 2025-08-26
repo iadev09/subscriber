@@ -29,7 +29,6 @@ impl State {
     }
 }
 
-
 impl State {
     pub fn is_shutting_down(&self) -> bool {
         self.shutdown_token.is_cancelled()

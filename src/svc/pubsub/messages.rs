@@ -9,7 +9,7 @@ use crate::increment;
 
 pub async fn handle_message(
     state: SharedState,
-    msg: Msg,
+    msg: Msg
 ) -> Result<(), Error> {
     increment!(Counter::Received);
 

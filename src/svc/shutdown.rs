@@ -1,4 +1,5 @@
-use tokio::signal::unix::{signal, SignalKind};
+use tokio::signal::unix::{SignalKind, signal};
+
 use crate::ctx::SharedState;
 
 pub async fn listen(state: SharedState) {
