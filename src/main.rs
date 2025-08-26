@@ -1,4 +1,3 @@
-mod actions;
 mod core;
 mod ctx;
 mod error;
@@ -21,7 +20,7 @@ async fn main() -> Result {
 
     log::debug!("Options: {:?}", state.options);
 
-    let subscriber = pubsub::start_subscriber(state.clone());
+    let subscriber = pubsub::run(state.clone());
 
     let dispatcher = dispatcher::run(state.clone());
 

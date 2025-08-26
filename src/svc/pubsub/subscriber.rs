@@ -12,7 +12,7 @@ use crate::svc::pubsub::messages::handle_message;
 
 static RETRY_COUNTER: Lazy<AtomicU8> = Lazy::new(|| AtomicU8::new(0));
 
-pub async fn start_subscriber(state: SharedState) -> crate::Result {
+pub async fn run(state: SharedState) -> crate::Result {
     const SHORT_RETRY_COUNT: u8 = 150;
     const SHORT_DELAY_SECONDS: u64 = 2;
     const LONG_DELAY_SECONDS: u64 = 60;
