@@ -31,7 +31,7 @@ pub async fn handle_message(
     // Extract the event name
     let event_name = json["event"].as_str().unwrap_or("unknown");
 
-    // log::debug!("📥 Received message: {}", event_name);
+    log::debug!("📥 Received message: {}", event_name);
 
     match event_name {
         "env.updated" => {
@@ -39,7 +39,7 @@ pub async fn handle_message(
                 let _ = state.send_command(Command::Run);
             } else {
                 log::error!("❓Received version.updated event without data");
-                increment!(Counter::Failed);
+                increment!(Counter::Rejected);
             }
         }
         "env.shutdown" => {
@@ -51,7 +51,7 @@ pub async fn handle_message(
                         .any(|v| v.as_str() == Some("*") || v.as_str() == Some(my_name))
                     {
                         // state.send_command(Command::Shutdown)?;
-                        log::warn!("⚠️  Received shutdown message targeting: {}", my_name);
+                        log::warn!("🔸 Received shutdown message targeting: {}", my_name);
                         increment!(Counter::Accepted);
                         increment!(Counter::Done);
                         state.initiate_shutdown();
@@ -61,11 +61,11 @@ pub async fn handle_message(
                     }
                 } else {
                     log::error!("⚠️  Received version.shutdown event without services");
-                    increment!(Counter::Failed);
+                    increment!(Counter::Rejected);
                 }
             } else {
                 log::error!("⚠️  Received version.shutdown event without data");
-                increment!(Counter::Failed);
+                increment!(Counter::Rejected);
             }
         }
         _ => {

@@ -9,13 +9,13 @@ pub enum Error {
     Io(#[from] io::Error),
 
     #[error("Json error: {0}")]
-    JsonError(#[from] JsonError),
+    Json(#[from] JsonError),
 
     #[error("Invalid UTF-8 output")]
     Utf8(#[from] std::string::FromUtf8Error),
 
     #[error("Environment variable not set: {0}")]
-    EnvError(#[from] VarError),
+    EnvVar(#[from] VarError),
 
     #[error("Unexpected error: {0}")]
     Unexpected(String)

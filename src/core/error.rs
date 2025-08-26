@@ -1,24 +1,10 @@
-use tokio::task::JoinError;
-
-use crate::core::shutdown::handle::HandleError;
-use crate::ctx::CtxError;
-
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Ctx Failed: {0}")]
-    Ctx(#[from] CtxError),
-
     #[error("Shutdown: {0}")]
-    Handle(#[from] HandleError),
-
-    #[error("Task join error: {0}")]
-    JoinError(#[from] JoinError),
+    Handle(#[from] crate::core::handle::Error),
 
     #[error("Internal error: {0}")]
-    Internal(String),
-
-    #[error("Unimplemented")]
-    Unimplemented
+    Internal(String)
 }
 
 impl From<&str> for Error {

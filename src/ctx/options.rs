@@ -5,7 +5,7 @@ use clap::Parser;
 
 #[derive(Debug, Parser)]
 #[command(
-    name = "hyper",
+    name = "subscriber",
     author,
     version,
     about = "framework for building high-performance web applications"
@@ -17,7 +17,7 @@ pub struct Options {
     #[arg(long = "redis", env = "REDIS_URL", help = "redis url")]
     pub redis_url: String,
 
-    #[arg(short = 'c', long, env = "BROADCAST_CHANNEL", help = "redis channel")]
+    #[arg(long, env = "BROADCAST_CHANNEL", help = "redis channel")]
     pub channel: String,
 
     #[arg(long, short = 'w', help = "max concurrent workers count  none unlimited")]
@@ -27,7 +27,7 @@ pub struct Options {
     pub idle_timeout: Option<Duration>,
 
     #[arg(short = 'g', long = "grace", value_parser = parse_duration, help = "idle timeout duration for operations",)]
-    pub grace_timeout: Option<Duration>
+    pub grace_timeout: Option<Duration>,
 }
 
 fn parse_duration(s: &str) -> Result<Duration, humantime::DurationError> {

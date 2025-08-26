@@ -1,8 +1,9 @@
 use broadcast::{Receiver, Sender, channel};
 use tokio::sync::broadcast;
 
+use crate::core::Command;
+use crate::core::error::Error;
 use crate::core::stats::Counter;
-use crate::core::{AppError, Command};
 use crate::{State, increment};
 
 pub struct BroadcastManager {
@@ -11,12 +12,17 @@ pub struct BroadcastManager {
 
 impl BroadcastManager {
     pub fn new() -> Self {
-        let (sender, _) = channel(1024);
+        let (sender, _) = channel(100);
         Self { sender }
     }
 
     pub fn subscribe(&self) -> Receiver<Command> {
         self.sender.subscribe()
+    }
+
+    pub fn close(&self) {
+        // Dropping the sender will close the channel
+        drop(self.sender.clone());
     }
 
     //
@@ -35,13 +41,13 @@ impl State {
     pub fn send_command(
         &self,
         command: Command
-    ) -> Result<(), AppError> {
+    ) -> Result<(), Error> {
         if !self.is_shutting_down() {
             let _ = self
                 .broadcast
                 .sender()
                 .send(command.clone())
-                .map_err(|_| AppError::Internal("Error sending command".to_string()));
+                .map_err(|_| Error::Internal("Error sending command".to_string()));
         } else {
             increment!(Counter::Rejected);
             log::warn!("⛔ Cannot send command, shutdown is in progress");

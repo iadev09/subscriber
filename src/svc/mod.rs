@@ -1,3 +1,4 @@
 pub mod dispatcher;
-pub mod http;
 pub(crate) mod pubsub;
+pub mod shutdown;
+

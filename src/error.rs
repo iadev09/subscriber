@@ -1,5 +1,3 @@
-use tokio::task::JoinError;
-
 use crate::ctx::CtxError;
 use crate::ctx::logging::Error as LoggingError;
 
@@ -13,6 +11,9 @@ pub enum Error {
     #[error("Log error: {0}")]
     Logging(#[from] LoggingError),
 
-    #[error("Task join error: {0}")]
-    JoinError(#[from] JoinError)
+    #[error("Dispatcher failed: {0}")]
+    Dispatcher(#[from] crate::svc::dispatcher::Error),
+
+    #[error("Subscriber failed: {0}")]
+    Subscriber(#[from] crate::svc::pubsub::Error)
 }

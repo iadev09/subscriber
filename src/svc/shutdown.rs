@@ -1,8 +1,5 @@
-use tokio::signal::unix::{SignalKind, signal};
-
+use tokio::signal::unix::{signal, SignalKind};
 use crate::ctx::SharedState;
-
-pub mod handle;
 
 pub async fn listen(state: SharedState) {
     let mut terminate_signal =
@@ -17,12 +14,11 @@ pub async fn listen(state: SharedState) {
             _ = terminate_signal.recv() => {
                 log::debug!("🔥 Terminate signal received, initiating shutdown");
                 state.initiate_shutdown();
-
             }
-            _ = state.on_shutdown() => {
-                log::info!("❎ Shutdown completed");
-                return;
-            }
+            // _ = state.on_shutdown() => {
+            //     log::info!("❎ Shutdown completed");
+            //     // return;
+            // }
         }
     }
 }

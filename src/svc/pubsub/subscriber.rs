@@ -12,7 +12,7 @@ use crate::svc::pubsub::messages::handle_message;
 
 static RETRY_COUNTER: Lazy<AtomicU8> = Lazy::new(|| AtomicU8::new(0));
 
-pub async fn start_subscriber(state: SharedState) -> Result<(), Error> {
+pub async fn start_subscriber(state: SharedState) -> crate::Result {
     const SHORT_RETRY_COUNT: u8 = 150;
     const SHORT_DELAY_SECONDS: u64 = 2;
     const LONG_DELAY_SECONDS: u64 = 60;
@@ -27,7 +27,7 @@ pub async fn start_subscriber(state: SharedState) -> Result<(), Error> {
 
         match subscribe_channel(state.clone()).await {
             Ok(_) => {
-                log::debug!("Subscription ended gracefully.");
+                log::debug!("❎ Subscription ended gracefully.");
                 break;
             }
             Err(e) => match &e {
@@ -56,12 +56,12 @@ pub async fn start_subscriber(state: SharedState) -> Result<(), Error> {
                 Error::UnhandledRedisError(redis_err) => {
                     log::error!("Unhandled Redis error: {} closing subscriber", redis_err);
                     log::debug!("Full redis error trace: {:?}", e);
-                    return Err(e);
+                    return Err(e.into());
                 }
                 _ => {
                     log::error!("Unexpected error: {}", e);
                     log::debug!("Full error trace: {:?}", e);
-                    return Err(e);
+                    return Err(e.into());
                 }
             }
         }
@@ -77,16 +77,16 @@ async fn subscribe_channel(state: SharedState) -> Result<(), Error> {
 
     subscriber.subscribe(&options.channel).await?;
     RETRY_COUNTER.store(0, Ordering::SeqCst);
-    log::info!("Subscribed to channel {}", &options.channel);
+    log::info!("Subscribed to channel '{}'", &options.channel);
 
-    let graceful_timeout = options.grace_timeout.unwrap();
+    let graceful_timeout = options.grace_timeout.unwrap_or(Duration::from_secs(1));
 
     let result = async {
         let mut msg_stream = subscriber.on_message();
         loop {
             tokio::select! {
                 _ = state.on_shutdown() => {
-                    log::warn!("Subscriber is shutting down");
+                    log::warn!("🔻 Subscriber is shutting down");
                     break;
                 }
 
@@ -102,12 +102,13 @@ async fn subscribe_channel(state: SharedState) -> Result<(), Error> {
                             match handle_result {
                                 Ok(Ok(_)) => {},
                                 Ok(Err(e)) => {
+                                    increment!(Counter::Rejected);
                                     log::error!("Error handling message: {e:?}");
-                                    increment!(Counter::Failed);
                                 },
-                                Err(_) => log::error!(
-                                    "Message handling timed out after {:?}", graceful_timeout
-                                ),
+                                Err(_) => {
+                                    increment!(Counter::Rejected);
+                                    log::error!("Message handling timed out after {:?}", graceful_timeout);
+                                },
                             }
                         }
                         None => {
@@ -124,8 +125,9 @@ async fn subscribe_channel(state: SharedState) -> Result<(), Error> {
     match result {
         Ok(_) => {
             if let Err(e) = subscriber.unsubscribe(&options.channel).await {
-                log::warn!("Unsubscribe failed during graceful shutdown: {}", e);
+                log::warn!("❌ Unsubscribe failed during graceful shutdown: {}", e);
             }
+            log::info!("📴 Unsubscribed from channel '{}'", &options.channel);
             Ok(())
         }
         Err(e @ Error::RedisConnectionError(_) | e @ Error::RedisDisconnected) => Err(e),
@@ -133,7 +135,7 @@ async fn subscribe_channel(state: SharedState) -> Result<(), Error> {
             if let Err(e) = subscriber.unsubscribe(&options.channel).await {
                 log::warn!("Unsubscribe failed during graceful shutdown: {}", e);
             }
-            log::error!("Subscription loop exited with error: {}", e);
+            log::error!("❌ Subscription loop exited with error: {}", e);
             Err(e)
         }
     }

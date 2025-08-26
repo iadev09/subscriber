@@ -29,7 +29,7 @@ impl State {
     }
 }
 
-#[allow(unused)]
+
 impl State {
     pub fn is_shutting_down(&self) -> bool {
         self.shutdown_token.is_cancelled()
@@ -37,6 +37,8 @@ impl State {
 
     pub fn initiate_shutdown(&self) {
         self.shutdown_token.cancel();
+        self.broadcast.close();
+        log::warn!("💥 Shutdown initiated. Graceful shutdown in progress...");
     }
 
     pub fn on_shutdown(&self) -> impl Future<Output = ()> + '_ {

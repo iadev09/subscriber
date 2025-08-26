@@ -1,4 +1,3 @@
-use std::env::VarError;
 use std::error::Error as StdError;
 use std::io;
 
@@ -7,17 +6,8 @@ use serde_json::Error as JsonError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("IO error: {0}")]
-    Io(#[from] io::Error),
-
     #[error("Json error: {0}")]
     JsonError(#[from] JsonError),
-
-    #[error("Invalid UTF-8 output")]
-    Utf8(#[from] std::string::FromUtf8Error),
-
-    #[error("Environment variable not set: {0}")]
-    EnvError(#[from] VarError),
 
     #[error("Redis message stream ended (None)")]
     RedisDisconnected,

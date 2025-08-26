@@ -1,4 +1,3 @@
-use std::env::VarError;
 use std::fs::{self, OpenOptions};
 use std::path::PathBuf;
 use std::{env, io};
@@ -14,11 +13,8 @@ pub enum Error {
     #[error("Invalid UTF-8 output")]
     Utf8(#[from] std::string::FromUtf8Error),
 
-    #[error("Environment variable not set: {0}")]
-    EnvError(#[from] VarError),
-
     #[error("Path not found {0}")]
-    PathNotFound(String)
+    NotFound(String)
 }
 
 use crate::ctx::utils::is_running_under_systemd;
@@ -42,7 +38,7 @@ fn get_log_path() -> Result<Option<String>, Error> {
         let log_path = PathBuf::from(&log_dir)
             .join("app.log")
             .to_str()
-            .ok_or(Error::PathNotFound(log_dir))?
+            .ok_or(Error::NotFound(log_dir))?
             .to_string();
 
         Ok(Some(log_path))

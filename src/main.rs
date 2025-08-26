@@ -4,12 +4,10 @@ mod ctx;
 mod error;
 mod svc;
 
-pub use error::Result;
-use tokio::join;
+pub use error::{Error as AppError, Result};
 
-use self::core::shutdown;
 use crate::ctx::{State, logging};
-use crate::svc::{dispatcher, pubsub};
+use crate::svc::{dispatcher, pubsub, shutdown};
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result {
@@ -23,20 +21,21 @@ async fn main() -> Result {
 
     log::debug!("Options: {:?}", state.options);
 
-    let subscriber = tokio::spawn(pubsub::start_subscriber(state.clone()));
-    let dispatcher = tokio::spawn(dispatcher::run(state.clone()));
+    let subscriber = pubsub::start_subscriber(state.clone());
 
-    let result = join!(subscriber, dispatcher);
+    let dispatcher = dispatcher::run(state.clone());
 
-    let (subscriber_result, dispatcher_result) = result;
-
-    if let Err(e) = subscriber_result {
-        log::error!("Subscriber task failed: {:?}", e);
+    match tokio::try_join!(subscriber, dispatcher) {
+        Ok((_, _)) => {
+            log::info!("❎ Subscriber and Dispatcher completed successfully.");
+        }
+        Err(err) => {
+            log::error!("❌ Service failed: {err}");
+            return Err(err);
+        }
     }
 
-    if let Err(e) = dispatcher_result {
-        log::error!("Dispatcher task failed: {:?}", e);
-    }
+    log::info!("✅ {} exits successfully! 🎉", state.info.app);
 
     Ok(())
 }

@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use tokio::sync::Notify;
 use tokio::time::sleep;
 
 use crate::core::notify::NotifyOnce;
@@ -15,7 +16,7 @@ pub struct Handle {
 struct Inner {
     graceful: NotifyOnce,
     shutdown: NotifyOnce,
-    released: NotifyOnce,
+    released: Notify,
     count: AtomicUsize,
     all_done: NotifyOnce,
     grace_period: Mutex<Option<Duration>>,
@@ -24,8 +25,8 @@ struct Inner {
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Max connections reached")]
-    Rejected // GracefulShutdown(Duration),
+    #[error("Service shutting down")]
+    ShuttingDown // GracefulShutdown(Duration),
 }
 
 #[allow(unused)]
@@ -81,14 +82,14 @@ impl Handle {
         self.inner.shutdown.notified().await;
     }
 
-    pub(self) async fn wait_graceful_shutdown(&self) {
+    pub async fn wait_graceful_shutdown(&self) {
         self.inner.graceful.notified().await;
     }
 
     pub(crate) async fn try_acquire_watcher(&self) -> Result<Watcher, Error> {
         loop {
             if self.inner.graceful.is_notified() {
-                return Err(Error::Rejected);
+                return Err(Error::ShuttingDown);
             }
 
             let count = self.inner.count.load(Ordering::SeqCst);
@@ -156,8 +157,10 @@ impl Drop for Watcher {
             self.handle.inner.all_done.notify_waiters();
         }
 
+        // watcher not dropped yet.
         if let Some(max_count) = self.handle.inner.max_count {
             if count < max_count {
+                // Notify waiters that a slot is available
                 self.handle.inner.released.notify_waiters();
             }
         }
