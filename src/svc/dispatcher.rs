@@ -165,7 +165,8 @@ pub async fn run(state: SharedState) -> crate::Result {
 
     handle.wait_all_done().await;
 
-    // Wait for canceled job results. because we work in instantaneous, we must wait cancellation task result before service shutdown
+    // Wait for canceled job results. because we work in instantaneous, we must wait
+    // cancellation task result before service shutdown
     tokio::task::yield_now().await;
 
     log::info!("📊 Final stats: {}", *STATS);

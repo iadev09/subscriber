@@ -10,7 +10,7 @@ RANDOM_EXTENSION=$(openssl rand -hex 5)
 TODAY_DATE=$(date +%Y%m%d)
 
 # Construct the version string using today's date
-EVOLUTION_CLIENT_VERSION="${TODAY_DATE}.${RANDOM_VERSION}.00000-${RANDOM_EXTENSION}"
+UPDATED_TEST_ENV="${TODAY_DATE}.${RANDOM_VERSION}.00000-${RANDOM_EXTENSION}"
 
 # Construct the JSON payload
 payload=$(
@@ -18,11 +18,11 @@ payload=$(
 {
   "event": "env.updated",
   "data": {
-    "key": "EVOLUTION_CLIENT_VERSION",
-    "value": "$EVOLUTION_CLIENT_VERSION",
-    "projects": ["net777","api","ops","servant"],
+    "key": "UPDATED_TEST_ENV",
+    "value": "$UPDATED_TEST_ENV",
+    "projects": ["api","ops","servant"],
     "services": [],
-    "workers": ["net777:*"]
+    "workers": ["api:*"]
   },
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
